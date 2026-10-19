@@ -27,37 +27,41 @@ class HierarchyController extends Controller
     }
 
     /**
-     * Step 1: Add new employee to directory (without hierarchy).
+     * Lookup registered employee by Email or Mobile number.
+     * Manual adding is not allowed; employees must register their account themselves.
      */
-    public function storeEmployee(Request $request): JsonResponse
+    public function lookupEmployee(Request $request): JsonResponse
     {
         $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
-            'mobile' => ['required', 'string', 'max:20', 'unique:users,mobile'],
-            'role' => ['required', 'in:admin,manager,employee'],
-            'designation' => ['nullable', 'string', 'max:255'],
-            'department' => ['nullable', 'string', 'max:255'],
-            'password' => ['required', 'string', 'min:6'],
+            'query' => ['required', 'string', 'min:3'],
         ]);
 
-        $employee = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'mobile' => $request->mobile,
-            'role' => $request->role,
-            'designation' => $request->designation ?: 'Staff Member',
-            'department' => $request->department ?: 'General',
-            'reporting_to_id' => null, // Added to directory first
-            'password' => Hash::make($request->password),
-            'is_active' => true,
-        ]);
+        $input = trim($request->input('query'));
+        $isEmail = filter_var($input, FILTER_VALIDATE_EMAIL);
+        $digitsOnly = preg_replace('/[^0-9]/', '', $input);
+
+        $query = User::query();
+
+        if ($isEmail) {
+            $user = $query->where('email', $input)->first();
+        } elseif (strlen($digitsOnly) >= 7) {
+            $user = $query->where('mobile', $digitsOnly)->orWhere('mobile', 'like', "%{$digitsOnly}%")->first();
+        } else {
+            $user = $query->where('email', $input)->orWhere('mobile', $input)->first();
+        }
+
+        if (! $user) {
+            return response()->json([
+                'status' => false,
+                'message' => "User does not exist with '{$input}'. The employee must create their account through self-registration first.",
+            ], 404);
+        }
 
         return response()->json([
             'status' => true,
-            'message' => 'Employee added to directory. Ready to be assigned in hierarchy.',
-            'employee' => $employee,
-        ], 201);
+            'message' => 'User found',
+            'user' => $user->load('manager:id,name,designation'),
+        ]);
     }
 
     /**

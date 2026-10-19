@@ -24,7 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Employee Directory & Hierarchy
     Route::get('/employees', [HierarchyController::class, 'listEmployees']);
-    Route::post('/employees', [HierarchyController::class, 'storeEmployee']);
+    Route::post('/employees/lookup', [HierarchyController::class, 'lookupEmployee']);
     Route::post('/employees/{employee}/assign-manager', [HierarchyController::class, 'assignManager']);
     Route::get('/hierarchy', [HierarchyController::class, 'teamTree']);
     Route::get('/assignable-employees', [HierarchyController::class, 'assignableEmployees']);

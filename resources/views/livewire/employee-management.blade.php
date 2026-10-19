@@ -6,17 +6,17 @@
                 Employee Directory
             </h1>
             <p class="text-sm text-slate-400 mt-1">
-                Add staff to the company directory, then configure reporting lines in the hierarchy
+                Add registered employees to your team hierarchy by searching their Email or Mobile number
             </p>
         </div>
 
         @if(auth()->user()->isManager())
-            <button wire:click="openAddModal"
+            <button wire:click="openLookupModal"
                     class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-lg shadow-indigo-600/30 transition transform active:scale-95">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
                 </svg>
-                <span>Add New Employee</span>
+                <span>Add Employee to Team</span>
             </button>
         @endif
     </div>
@@ -25,7 +25,7 @@
     @if (session()->has('message'))
         <div class="mb-6 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                 </svg>
                 <span>{{ session('message') }}</span>
@@ -35,7 +35,7 @@
 
     @if (session()->has('error'))
         <div class="mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             <span>{{ session('error') }}</span>
@@ -51,10 +51,9 @@
                 </svg>
             </div>
             <div>
-                <h3 class="text-sm font-bold text-white">Two-Step Employee Onboarding</h3>
+                <h3 class="text-sm font-bold text-white">Self-Registration & Team Hierarchy Placement</h3>
                 <p class="text-xs text-slate-300 mt-0.5 leading-relaxed">
-                    <strong>Step 1:</strong> Add an employee with their login credentials (Email, Mobile, Password).<br>
-                    <strong>Step 2:</strong> Click <em>"Assign in Hierarchy"</em> to attach them under their respective manager or supervisor.
+                    Employees register and create their own accounts via the registration page or mobile app. Managers simply search by their <strong>Email</strong> or <strong>Mobile Number</strong> to add and place them into the reporting tree.
                 </p>
             </div>
         </div>
@@ -73,15 +72,15 @@
     <!-- Quick Status Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
         <div class="p-5 rounded-2xl bg-slate-800/80 border border-slate-700/60 shadow-lg">
-            <div class="text-xs uppercase font-semibold text-slate-400">Total Directory</div>
+            <div class="text-xs uppercase font-semibold text-slate-400">Total Registered Users</div>
             <div class="text-3xl font-bold text-white mt-2">{{ $totalEmployees }}</div>
-            <div class="text-xs text-slate-400 mt-1">All registered users</div>
+            <div class="text-xs text-slate-400 mt-1">Accounts in system</div>
         </div>
 
         <div class="p-5 rounded-2xl bg-slate-800/80 border border-slate-700/60 shadow-lg">
             <div class="text-xs uppercase font-semibold text-emerald-400">Placed in Hierarchy</div>
             <div class="text-3xl font-bold text-emerald-400 mt-2">{{ $assignedCount }}</div>
-            <div class="text-xs text-slate-400 mt-1">Assigned to a manager</div>
+            <div class="text-xs text-slate-400 mt-1">Assigned to a reporting manager</div>
         </div>
 
         <div class="p-5 rounded-2xl bg-slate-800/80 border {{ $unassignedCount > 0 ? 'border-amber-500/40 bg-amber-500/5' : 'border-slate-700/60' }} shadow-lg">
@@ -95,7 +94,7 @@
                 @endif
             </div>
             <div class="text-3xl font-bold text-amber-400 mt-2">{{ $unassignedCount }}</div>
-            <div class="text-xs text-slate-400 mt-1">Needs reporting manager</div>
+            <div class="text-xs text-slate-400 mt-1">Needs supervisor assigned</div>
         </div>
     </div>
 
@@ -108,7 +107,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
                 <input wire:model.live.debounce.300ms="search" type="text"
-                       placeholder="Search by name, email, phone, or title..."
+                       placeholder="Filter by name, email, phone, or title..."
                        class="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:border-indigo-500 focus:ring-indigo-500">
             </div>
 
@@ -259,7 +258,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                                 </svg>
                                 <div class="text-sm font-medium">No employees found</div>
-                                <p class="text-xs text-slate-500 mt-1">Try adjusting your search or add a new employee.</p>
+                                <p class="text-xs text-slate-500 mt-1">Try searching or add an employee to your team.</p>
                             </td>
                         </tr>
                     @endforelse
@@ -272,104 +271,183 @@
         </div>
     </div>
 
-    <!-- MODAL 1: Add New Employee to Directory -->
-    @if($showAddModal)
+    <!-- MODAL 1: Search Employee by Email or Mobile & Add to Team -->
+    @if($showLookupModal)
         <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
-            <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" wire:click="$set('showAddModal', false)"></div>
+            <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" wire:click="$set('showLookupModal', false)"></div>
 
             <div class="min-h-full flex items-center justify-center p-4">
                 <div class="relative w-full max-w-lg rounded-3xl bg-slate-800 border border-slate-700 p-6 sm:p-8 shadow-2xl">
                     <div class="flex items-center justify-between mb-5">
                         <div>
-                            <h3 class="text-lg font-bold text-white">Step 1: Add Employee to Directory</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Register staff member. You can link them into the hierarchy tree next.</p>
+                            <h3 class="text-lg font-bold text-white">Add Employee by Email or Mobile</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Search existing registered user to place in your team hierarchy</p>
                         </div>
-                        <button wire:click="$set('showAddModal', false)" class="text-slate-400 hover:text-white">
+                        <button wire:click="$set('showLookupModal', false)" class="text-slate-400 hover:text-white">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>
                     </div>
 
-                    <form wire:submit="addEmployee" class="space-y-4">
+                    <!-- Search Input Box -->
+                    <div class="space-y-4">
                         <div>
-                            <label class="block text-xs uppercase font-semibold text-slate-400 mb-1">Full Name</label>
-                            <input wire:model="name" type="text" required placeholder="e.g. John Doe"
-                                   class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            @error('name') <span class="text-xs text-rose-400">{{ $message }}</span> @enderror
+                            <label class="block text-xs uppercase font-semibold text-slate-400 mb-1.5">
+                                Employee Email or Mobile Number
+                            </label>
+                            <div class="flex gap-2">
+                                <div class="relative flex-1">
+                                    <input wire:model="lookupInput"
+                                           wire:keydown.enter.prevent="searchUser"
+                                           type="text"
+                                           placeholder="e.g. employee@company.com or 9876543210"
+                                           class="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                </div>
+                                <button type="button"
+                                        wire:click="searchUser"
+                                        wire:loading.attr="disabled"
+                                        class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium shadow-md shadow-indigo-600/30 transition flex items-center gap-2 shrink-0">
+                                    <svg wire:loading.remove wire:target="searchUser" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                    </svg>
+                                    <svg wire:loading wire:target="searchUser" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                    </svg>
+                                    <span>Find User</span>
+                                </button>
+                            </div>
+                            @error('lookupInput')
+                                <span class="text-xs text-rose-400 block mt-1.5">{{ $message }}</span>
+                            @enderror
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs uppercase font-semibold text-slate-400 mb-1">Email Address</label>
-                                <input wire:model="email" type="email" required placeholder="john@company.com"
-                                       class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                @error('email') <span class="text-xs text-rose-400">{{ $message }}</span> @enderror
+                        <!-- STATE 1: User NOT Found -->
+                        @if($lookupError)
+                            <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs space-y-2">
+                                <div class="flex items-start gap-2.5">
+                                    <svg class="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                    </svg>
+                                    <div>
+                                        <div class="font-bold text-white text-sm">User Does Not Exist</div>
+                                        <p class="mt-1 text-slate-300 leading-relaxed">{{ $lookupError }}</p>
+                                    </div>
+                                </div>
+                                <div class="pt-2 border-t border-amber-500/20 text-slate-400 flex items-center justify-between">
+                                    <span>Users must register themselves on web or app.</span>
+                                </div>
                             </div>
+                        @endif
 
-                            <div>
-                                <label class="block text-xs uppercase font-semibold text-slate-400 mb-1">Mobile Number</label>
-                                <input wire:model="mobile" type="text" required placeholder="e.g. 9876543210"
-                                       class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                @error('mobile') <span class="text-xs text-rose-400">{{ $message }}</span> @enderror
+                        <!-- STATE 2: User FOUND -->
+                        @if($foundUser)
+                            <div class="space-y-4 pt-2">
+                                <!-- Found User Card -->
+                                <div class="p-4 rounded-2xl bg-slate-900 border border-emerald-500/40 shadow-lg">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                            Registered Account Found
+                                        </span>
+                                        <span class="text-xs text-slate-400">ID #{{ $foundUser->id }}</span>
+                                    </div>
+
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center font-bold text-white text-lg shadow-md shrink-0">
+                                            {{ strtoupper(substr($foundUser->name, 0, 1)) }}
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="text-base font-bold text-white truncate">{{ $foundUser->name }}</div>
+                                            <div class="text-xs text-slate-300 mt-0.5 flex flex-wrap gap-x-3">
+                                                <span>📧 {{ $foundUser->email }}</span>
+                                                <span>📱 {{ $foundUser->mobile }}</span>
+                                            </div>
+                                            <div class="text-[11px] text-indigo-400 mt-1">
+                                                @if($foundUser->manager)
+                                                    ↳ Currently reports to: <strong class="text-white">{{ $foundUser->manager->name }}</strong>
+                                                @else
+                                                    ⚡ Currently unassigned in hierarchy
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Form to configure team placement -->
+                                <div class="space-y-3 pt-2">
+                                    <h4 class="text-xs uppercase font-bold text-indigo-400 tracking-wider">Configure Hierarchy Placement</h4>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-xs uppercase font-semibold text-slate-400 mb-1">Role in Team</label>
+                                            <select wire:model="assignRole"
+                                                    class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:border-indigo-500 focus:ring-indigo-500">
+                                                <option value="employee">Employee (Staff)</option>
+                                                <option value="manager">Manager / Team Lead</option>
+                                                <option value="admin">Administrator</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-xs uppercase font-semibold text-slate-400 mb-1">Reporting Supervisor</label>
+                                            <select wire:model="assignReportingToId"
+                                                    class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:border-indigo-500 focus:ring-indigo-500">
+                                                <option value="">None (Top-Level)</option>
+                                                @foreach($this->eligibleManagers as $mgr)
+                                                    <option value="{{ $mgr->id }}">
+                                                        {{ $mgr->name }} ({{ $mgr->designation ?? $mgr->role }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            @error('assignReportingToId')
+                                                <span class="text-xs text-rose-400 block mt-1">{{ $message }}</span>
+                                            @enderror
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-xs uppercase font-semibold text-slate-400 mb-1">Designation</label>
+                                            <input wire:model="assignDesignation" type="text" placeholder="e.g. Field Executive, Senior Analyst"
+                                                   class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-xs focus:border-indigo-500 focus:ring-indigo-500">
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-xs uppercase font-semibold text-slate-400 mb-1">Department</label>
+                                            <input wire:model="assignDepartment" type="text" placeholder="e.g. Operations, IT, Sales"
+                                                   class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-xs focus:border-indigo-500 focus:ring-indigo-500">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-end gap-3 pt-3 border-t border-slate-700/60">
+                                    <button type="button" wire:click="$set('showLookupModal', false)"
+                                            class="px-4 py-2 rounded-xl bg-slate-700 text-slate-300 hover:bg-slate-600 text-xs font-medium">
+                                        Cancel
+                                    </button>
+                                    <button type="button" wire:click="confirmAddToHierarchy"
+                                            class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/30">
+                                        Add to Hierarchy Tree
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        @endif
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs uppercase font-semibold text-slate-400 mb-1">Role</label>
-                                <select wire:model="role" required
-                                        class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                    <option value="employee">Employee (Staff)</option>
-                                    <option value="manager">Manager / Team Lead</option>
-                                    <option value="admin">Administrator</option>
-                                </select>
+                        @if(! $hasSearched)
+                            <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-700/60 text-xs text-slate-400 flex items-start gap-2.5">
+                                <span class="text-indigo-400 font-bold shrink-0">ℹ️ Info:</span>
+                                <span class="leading-relaxed">Manual creation without employee registration is not allowed. Employees create their own accounts via the registration page or app. Enter their email or mobile number above to find and link them.</span>
                             </div>
-
-                            <div>
-                                <label class="block text-xs uppercase font-semibold text-slate-400 mb-1">Temporary Password</label>
-                                <input wire:model="password" type="text" required
-                                       class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                @error('password') <span class="text-xs text-rose-400">{{ $message }}</span> @enderror
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs uppercase font-semibold text-slate-400 mb-1">Designation</label>
-                                <input wire:model="designation" type="text" placeholder="e.g. Junior Developer, Field Officer"
-                                       class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            </div>
-
-                            <div>
-                                <label class="block text-xs uppercase font-semibold text-slate-400 mb-1">Department</label>
-                                <input wire:model="department" type="text" placeholder="e.g. Operations, IT, Sales"
-                                       class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            </div>
-                        </div>
-
-                        <div class="p-3.5 rounded-xl bg-slate-900/60 border border-slate-700/60 text-xs text-slate-400 flex items-center gap-2.5">
-                            <span class="text-indigo-400 font-bold">ℹ️ Note:</span>
-                            <span>This employee will be added to the directory. You will then select who they report to in the next step.</span>
-                        </div>
-
-                        <div class="flex justify-end gap-3 pt-3">
-                            <button type="button" wire:click="$set('showAddModal', false)"
-                                    class="px-4 py-2 rounded-xl bg-slate-700 text-slate-300 hover:bg-slate-600 text-sm font-medium">
-                                Cancel
-                            </button>
-                            <button type="submit"
-                                    class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium shadow-md shadow-indigo-600/30">
-                                Add to Directory
-                            </button>
-                        </div>
-                    </form>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
     @endif
 
-    <!-- MODAL 2: Assign Hierarchy (Reports To) -->
+    <!-- MODAL 2: Change Existing Employee Hierarchy (Reports To) -->
     @if($showAssignModal && $selectedEmployee)
         <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
             <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" wire:click="$set('showAssignModal', false)"></div>
@@ -378,7 +456,7 @@
                 <div class="relative w-full max-w-md rounded-3xl bg-slate-800 border border-slate-700 p-6 sm:p-8 shadow-2xl">
                     <div class="flex items-center justify-between mb-5">
                         <div>
-                            <h3 class="text-lg font-bold text-white">Step 2: Assign in Hierarchy</h3>
+                            <h3 class="text-lg font-bold text-white">Update Hierarchy Placement</h3>
                             <p class="text-xs text-slate-400 mt-0.5">Configure reporting supervisor for this employee</p>
                         </div>
                         <button wire:click="$set('showAssignModal', false)" class="text-slate-400 hover:text-white">
@@ -402,7 +480,7 @@
                     <form wire:submit="assignHierarchy" class="space-y-4">
                         <div>
                             <label class="block text-xs uppercase font-semibold text-slate-400 mb-1.5">
-                                Select Reporting Manager / Supervisor
+                                Select Reporting Supervisor
                             </label>
                             <select wire:model="selectedManagerId"
                                     class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -419,7 +497,7 @@
                         </div>
 
                         <div class="text-xs text-slate-400 bg-indigo-500/10 border border-indigo-500/20 p-3 rounded-xl">
-                            The selected manager will be able to delegate tasks to <strong>{{ $selectedEmployee->name }}</strong> and view their task progress.
+                            The selected supervisor will be able to delegate tasks to <strong>{{ $selectedEmployee->name }}</strong> and monitor progress.
                         </div>
 
                         <div class="flex justify-end gap-3 pt-3">

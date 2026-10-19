@@ -4,8 +4,6 @@ namespace App\Livewire;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -17,17 +15,20 @@ class EmployeeManagement extends Component
     public string $roleFilter = 'all';
     public string $hierarchyFilter = 'all'; // all, assigned, unassigned
 
-    // Modal state for Add Employee
-    public bool $showAddModal = false;
-    public string $name = '';
-    public string $email = '';
-    public string $mobile = '';
-    public string $role = 'employee';
-    public string $designation = '';
-    public string $department = '';
-    public string $password = 'password';
+    // Modal state for Search & Add Employee by Email/Mobile
+    public bool $showLookupModal = false;
+    public string $lookupInput = '';
+    public ?int $foundUserId = null;
+    public ?string $lookupError = null;
+    public bool $hasSearched = false;
 
-    // Modal state for Assign Hierarchy
+    // Assignment fields for the found user
+    public string $assignRole = 'employee';
+    public string $assignDesignation = '';
+    public string $assignDepartment = '';
+    public ?int $assignReportingToId = null;
+
+    // Modal state for Assign Hierarchy (reassign existing)
     public bool $showAssignModal = false;
     public ?int $selectedEmployeeId = null;
     public ?int $selectedManagerId = null;
@@ -53,43 +54,109 @@ class EmployeeManagement extends Component
         $this->resetPage();
     }
 
-    public function openAddModal(): void
+    /**
+     * Open the Add Employee Modal (Search by Email or Mobile)
+     */
+    public function openLookupModal(): void
     {
-        $this->reset(['name', 'email', 'mobile', 'designation', 'department']);
-        $this->role = 'employee';
-        $this->password = 'password';
-        $this->showAddModal = true;
+        $this->reset([
+            'lookupInput',
+            'foundUserId',
+            'lookupError',
+            'hasSearched',
+            'assignDesignation',
+            'assignDepartment',
+        ]);
+        $this->assignRole = 'employee';
+        $this->assignReportingToId = Auth::user()->isManager() ? Auth::id() : null;
+        $this->showLookupModal = true;
     }
 
-    public function addEmployee(): void
+    /**
+     * Search employee by Email or Mobile number
+     */
+    public function searchUser(): void
     {
         $this->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
-            'mobile' => ['required', 'string', 'max:20', 'unique:users,mobile'],
-            'role' => ['required', 'in:admin,manager,employee'],
-            'designation' => ['nullable', 'string', 'max:255'],
-            'department' => ['nullable', 'string', 'max:255'],
-            'password' => ['required', 'string', 'min:6'],
+            'lookupInput' => ['required', 'string', 'min:3'],
+        ], [
+            'lookupInput.required' => 'Please enter an Email address or Mobile number.',
         ]);
 
-        User::create([
-            'name' => $this->name,
-            'email' => $this->email,
-            'mobile' => $this->mobile,
-            'role' => $this->role,
-            'designation' => $this->designation ?: 'Staff Member',
-            'department' => $this->department ?: 'General',
-            'reporting_to_id' => null, // Added to directory first without hierarchy
-            'password' => Hash::make($this->password),
-            'is_active' => true,
-        ]);
+        $input = trim($this->lookupInput);
+        $isEmail = filter_var($input, FILTER_VALIDATE_EMAIL);
+        $digitsOnly = preg_replace('/[^0-9]/', '', $input);
 
-        $this->showAddModal = false;
-        $this->reset(['name', 'email', 'mobile', 'designation', 'department']);
-        session()->flash('message', 'Employee successfully added to the directory! You can now assign them in the hierarchy.');
+        $query = User::query();
+
+        if ($isEmail) {
+            $user = $query->where('email', $input)->first();
+        } elseif (strlen($digitsOnly) >= 7) {
+            $user = $query->where('mobile', $digitsOnly)->orWhere('mobile', 'like', "%{$digitsOnly}%")->first();
+        } else {
+            $user = $query->where('email', $input)->orWhere('mobile', $input)->first();
+        }
+
+        $this->hasSearched = true;
+
+        if (! $user) {
+            $this->foundUserId = null;
+            $this->lookupError = "User not found with '{$input}'. Employees must create and register their account first. Once registered, you can add them to the hierarchy.";
+            return;
+        }
+
+        $this->foundUserId = $user->id;
+        $this->lookupError = null;
+
+        // Pre-fill existing or default details
+        $this->assignRole = $user->role ?: 'employee';
+        $this->assignDesignation = $user->designation ?: '';
+        $this->assignDepartment = $user->department ?: 'Operations';
+        $this->assignReportingToId = $user->reporting_to_id ?: (Auth::user()->isManager() ? Auth::id() : null);
     }
 
+    /**
+     * Confirm adding the found user to the hierarchy
+     */
+    public function confirmAddToHierarchy(): void
+    {
+        if (! $this->foundUserId) {
+            return;
+        }
+
+        $user = User::findOrFail($this->foundUserId);
+
+        $this->validate([
+            'assignRole' => ['required', 'in:admin,manager,employee'],
+            'assignDesignation' => ['nullable', 'string', 'max:255'],
+            'assignDepartment' => ['nullable', 'string', 'max:255'],
+            'assignReportingToId' => ['nullable', 'exists:users,id'],
+        ]);
+
+        if ($this->assignReportingToId) {
+            if ($user->cannotReportTo((int) $this->assignReportingToId)) {
+                $this->addError('assignReportingToId', 'Cannot assign this manager because it would cause a circular reporting loop.');
+                return;
+            }
+        }
+
+        $user->role = $this->assignRole;
+        $user->designation = $this->assignDesignation ?: 'Staff Member';
+        $user->department = $this->assignDepartment ?: 'Operations';
+        $user->reporting_to_id = $this->assignReportingToId ? (int) $this->assignReportingToId : null;
+        $user->save();
+
+        $managerName = $user->manager ? $user->manager->name : 'Top Level (No Manager)';
+
+        $this->showLookupModal = false;
+        $this->reset(['lookupInput', 'foundUserId', 'lookupError', 'hasSearched']);
+
+        session()->flash('message', "{$user->name} has been successfully added to the team hierarchy under {$managerName}!");
+    }
+
+    /**
+     * Open modal to change hierarchy for existing employee in table
+     */
     public function openAssignModal(int $employeeId): void
     {
         $employee = User::findOrFail($employeeId);
@@ -118,7 +185,7 @@ class EmployeeManagement extends Component
 
         $this->showAssignModal = false;
         $this->reset(['selectedEmployeeId', 'selectedManagerId']);
-        session()->flash('message', 'Hierarchy placement updated successfully!');
+        session()->flash('message', "Hierarchy placement for {$employee->name} updated successfully!");
     }
 
     public function toggleStatus(int $userId): void
@@ -136,16 +203,18 @@ class EmployeeManagement extends Component
 
     public function getEligibleManagersProperty()
     {
-        if (! $this->selectedEmployeeId) {
+        $targetId = $this->selectedEmployeeId ?: $this->foundUserId;
+
+        if (! $targetId) {
             return User::whereIn('role', ['admin', 'manager'])->where('is_active', true)->orderBy('name')->get();
         }
 
-        $employee = User::find($this->selectedEmployeeId);
-        if (! $employee) {
+        $targetUser = User::find($targetId);
+        if (! $targetUser) {
             return collect();
         }
 
-        $invalidIds = array_merge([$employee->id], $employee->allSubordinateIds());
+        $invalidIds = array_merge([$targetUser->id], $targetUser->allSubordinateIds());
 
         return User::whereNotIn('id', $invalidIds)
             ->where('is_active', true)
@@ -183,6 +252,7 @@ class EmployeeManagement extends Component
         $assignedCount = User::whereNotNull('reporting_to_id')->count();
 
         $selectedEmployee = $this->selectedEmployeeId ? User::find($this->selectedEmployeeId) : null;
+        $foundUser = $this->foundUserId ? User::with('manager')->find($this->foundUserId) : null;
 
         return view('livewire.employee-management', [
             'employees' => $employees,
@@ -190,6 +260,7 @@ class EmployeeManagement extends Component
             'unassignedCount' => $unassignedCount,
             'assignedCount' => $assignedCount,
             'selectedEmployee' => $selectedEmployee,
+            'foundUser' => $foundUser,
         ]);
     }
 }
