@@ -22,7 +22,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Hierarchy & Team
+    // Employee Directory & Hierarchy
+    Route::get('/employees', [HierarchyController::class, 'listEmployees']);
+    Route::post('/employees', [HierarchyController::class, 'storeEmployee']);
+    Route::post('/employees/{employee}/assign-manager', [HierarchyController::class, 'assignManager']);
     Route::get('/hierarchy', [HierarchyController::class, 'teamTree']);
     Route::get('/assignable-employees', [HierarchyController::class, 'assignableEmployees']);
 

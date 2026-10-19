@@ -89,6 +89,18 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if assigning candidate as manager would cause a circular reference.
+     */
+    public function cannotReportTo(int $candidateManagerId): bool
+    {
+        if ($this->id === $candidateManagerId) {
+            return true;
+        }
+
+        return in_array($candidateManagerId, $this->allSubordinateIds());
+    }
+
+    /**
      * Tasks assigned by this user.
      */
     public function createdTasks(): HasMany
