@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\GitUpdateController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -13,10 +12,6 @@ Route::middleware(['auth'])->group(function () {
     Route::view('employees', 'employees')->name('employees.index');
     Route::view('hierarchy', 'hierarchy')->name('hierarchy.index');
     Route::view('profile', 'profile')->name('profile');
-
-    // Git Self-Updater Routes
-    Route::get('/git-info', [GitUpdateController::class, 'info'])->name('git.info');
-    Route::post('/git-update', [GitUpdateController::class, 'update'])->name('git.update');
 });
 
 require __DIR__.'/auth.php';
